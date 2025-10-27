@@ -1,0 +1,19 @@
+{
+  "name": "sgd-myr-platform",
+  "private": true,
+  "version": "1.0.0",
+  "description": "SGD to MYR exchange rate scraper and Express API.",
+  "scripts": {
+    "build": "npm run build",
+    "dev": "npm --prefix server run dev",
+    "start": "npm --prefix server run start",
+    "lint": "npm --prefix server run lint",
+    "install:server": "npm --prefix server install",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "client:preview": "npm --prefix client run preview"
+  },
+  "workspaces": [
+    "server"
+  ]
+}

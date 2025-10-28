@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChartLineInteractive } from "@/components/ui/chart-line-interactive";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -46,7 +47,7 @@ function App() {
       setError(null);
       try {
         const response = await fetch(
-          "https://sgd-myr-exchange-rates.vercel.app/api/v1/rates/latest",
+          "https://sgd-myr-exchange-rates.vercel.app/api/v1/rates",
           { signal: controller.signal }
         );
 
@@ -75,30 +76,61 @@ function App() {
   }, []);
 
   const lastUpdated = useMemo(() => {
-    if (rates.length === 0) {
+    const timestamps = rates
+      .map((rate) => rate.retrieved_at ?? rate.created_at)
+      .filter((value): value is string => Boolean(value))
+      .map((value) => new Date(value));
+
+    const validDates = timestamps.filter(
+      (date) => !Number.isNaN(date.getTime())
+    );
+
+    if (validDates.length === 0) {
       return null;
     }
 
-    const date = rates[0]?.created_at;
-    if (!date) {
-      return null;
-    }
+    const latest = new Date(
+      Math.max(...validDates.map((date) => date.getTime()))
+    );
 
-    const parsed = new Date(date);
-    if (Number.isNaN(parsed.getTime())) {
-      return null;
-    }
-
-    return parsed.toLocaleString(undefined, {
+    return latest.toLocaleString(undefined, {
       dateStyle: "medium",
       timeStyle: "short",
     });
   }, [rates]);
 
-  const sortedRates = useMemo(
-    () => [...rates].sort((a, b) => a.platform.localeCompare(b.platform)),
-    [rates]
-  );
+  const latestRates = useMemo(() => {
+    const byPlatform = new Map<
+      string,
+      { rate: Rate; timestamp: number }
+    >();
+
+    rates.forEach((rate) => {
+      if (!rate.platform) {
+        return;
+      }
+
+      const rawTimestamp = rate.retrieved_at ?? rate.created_at;
+      if (!rawTimestamp) {
+        return;
+      }
+
+      const parsed = new Date(rawTimestamp);
+      const timestamp = parsed.getTime();
+      if (Number.isNaN(timestamp)) {
+        return;
+      }
+
+      const existing = byPlatform.get(rate.platform);
+      if (!existing || timestamp > existing.timestamp) {
+        byPlatform.set(rate.platform, { rate, timestamp });
+      }
+    });
+
+    return Array.from(byPlatform.values())
+      .map((entry) => entry.rate)
+      .sort((a, b) => a.platform.localeCompare(b.platform));
+  }, [rates]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -121,8 +153,8 @@ function App() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  href="https://sgd-myr-exchange-rates.vercel.app/api/v1/rates/latest"
+              <NavigationMenuLink
+                  href="https://sgd-myr-exchange-rates.vercel.app/api/v1/rates"
                   target="_blank"
                   rel="noreferrer"
                   className={navigationMenuTriggerStyle()}
@@ -179,7 +211,7 @@ function App() {
               </Card>
             )}
 
-            {!loading && !error && rates.length === 0 && (
+            {!loading && !error && latestRates.length === 0 && (
               <div className="flex flex-col items-center gap-4">
                 <Button disabled size="sm">
                   <Spinner />
@@ -188,27 +220,30 @@ function App() {
               </div>
             )}
 
-            {!loading && !error && sortedRates.length > 0 && (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedRates.map((rate) => (
-                  <Card key={rate.id} className="hover:shadow-xl gap-1">
-                    <CardHeader>
-                      <CardTitle>{rate.platform}</CardTitle>
-                      {/* <CardDescription className="text-slate-500">
+            {!loading && !error && latestRates.length > 0 && (
+              <div className="space-y-6">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {latestRates.map((rate) => (
+                    <Card key={rate.id} className="hover:shadow-xl gap-1">
+                      <CardHeader>
+                        <CardTitle>{rate.platform}</CardTitle>
+                        {/* <CardDescription className="text-slate-500">
                         {rate.base_currency} to {rate.target_currency}
                       </CardDescription> */}
-                    </CardHeader>
-                    <CardContent className="space-y-1 text-left">
-                      <p className="text-3xl font-semibold tracking-tight sm:text-3xl">
-                        {rate.exchange_rate.toFixed(4)}
-                      </p>
-                      <p className="text-sm text-slate-400">
-                        1 {rate.base_currency} = {rate.exchange_rate.toFixed(4)}{" "}
-                        {rate.target_currency}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardHeader>
+                      <CardContent className="space-y-1 text-left">
+                        <p className="text-3xl font-semibold tracking-tight sm:text-3xl">
+                          {rate.exchange_rate.toFixed(4)}
+                        </p>
+                        <p className="text-sm text-slate-400">
+                          1 {rate.base_currency} ={" "}
+                          {rate.exchange_rate.toFixed(4)} {rate.target_currency}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <ChartLineInteractive data={rates} />
               </div>
             )}
           </section>

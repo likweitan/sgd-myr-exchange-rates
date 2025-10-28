@@ -34,6 +34,8 @@ type RatesResponse = {
   data: Rate[];
 };
 
+const DISPLAY_TIME_ZONE = "Asia/Singapore";
+
 function App() {
   const [rates, setRates] = useState<Rate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +79,7 @@ function App() {
 
   const lastUpdated = useMemo(() => {
     const timestamps = rates
-      .map((rate) => rate.retrieved_at ?? rate.created_at)
+      .map((rate) => rate.created_at ?? rate.retrieved_at)
       .filter((value): value is string => Boolean(value))
       .map((value) => new Date(value));
 
@@ -93,10 +95,11 @@ function App() {
       Math.max(...validDates.map((date) => date.getTime()))
     );
 
-    return latest.toLocaleString(undefined, {
+    return new Intl.DateTimeFormat(undefined, {
       dateStyle: "medium",
       timeStyle: "short",
-    });
+      timeZone: DISPLAY_TIME_ZONE,
+    }).format(latest);
   }, [rates]);
 
   const latestRates = useMemo(() => {
@@ -110,7 +113,7 @@ function App() {
         return;
       }
 
-      const rawTimestamp = rate.retrieved_at ?? rate.created_at;
+      const rawTimestamp = rate.created_at ?? rate.retrieved_at;
       if (!rawTimestamp) {
         return;
       }

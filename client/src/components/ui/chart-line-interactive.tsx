@@ -51,6 +51,8 @@ const CHART_COLORS = [
   "var(--chart-6)",
 ];
 
+const DISPLAY_TIME_ZONE = "Asia/Singapore";
+
 const getPlatformKey = (platform: string) =>
   platform.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
@@ -83,6 +85,21 @@ const sanitizeTimestamp = (timestamp?: string) => {
   }
 
   return parsed.toISOString();
+};
+
+const formatInDisplayTimeZone = (
+  value: string,
+  options: Intl.DateTimeFormatOptions
+) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-SG", {
+    timeZone: DISPLAY_TIME_ZONE,
+    ...options,
+  }).format(date);
 };
 
 const buildPlatformMeta = (data: HistoricalRate[]): PlatformMeta[] => {
@@ -119,7 +136,7 @@ const buildChartData = (data: HistoricalRate[], platforms: PlatformMeta[]) => {
   const platformKeys = new Set(platforms.map((platform) => platform.key));
 
   for (const rate of data) {
-    const iso = sanitizeTimestamp(rate.retrieved_at || rate.created_at);
+    const iso = sanitizeTimestamp(rate.created_at || rate.retrieved_at);
     if (!iso) {
       continue;
     }
@@ -325,12 +342,12 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
                 tickMargin={8}
                 minTickGap={32}
                 tickFormatter={(value: string) => {
-                  const date = new Date(value);
-                  return date.toLocaleDateString("en-US", {
+                  return formatInDisplayTimeZone(value, {
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
+                    hour12: true,
                   });
                 }}
               />
@@ -346,14 +363,13 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
                   <ChartTooltipContent
                     className="w-[240px]"
                     labelFormatter={(value) => {
-                      const date = new Date(value as string);
-                      return date.toLocaleDateString("en-US", {
+                      return formatInDisplayTimeZone(value as string, {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
-                        hour12: false,
+                        hour12: true,
                       });
                     }}
                   />

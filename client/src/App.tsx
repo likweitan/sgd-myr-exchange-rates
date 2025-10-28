@@ -77,7 +77,7 @@ function App() {
       return null;
     }
 
-    const date = rates[0]?.retrieved_at ?? rates[0]?.created_at;
+    const date = rates[0]?.created_at;
     if (!date) {
       return null;
     }

@@ -337,15 +337,9 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickMargin={8}
-                width={70}
+                tick={false}
+                width={0}
                 domain={yDomain}
-                tickFormatter={(value: number) =>
-                  value.toLocaleString(undefined, {
-                    minimumFractionDigits: 4,
-                    maximumFractionDigits: 4,
-                  })
-                }
               />
               <ChartTooltip
                 content={

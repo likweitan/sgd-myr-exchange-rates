@@ -168,17 +168,17 @@ const RANGE_DEFINITIONS: Record<
   daily: {
     label: "Daily",
     durationMs: 24 * 60 * 60 * 1000,
-    description: "Last 24 hours",
+    description: "24 hours",
   },
   weekly: {
     label: "Weekly",
     durationMs: 7 * 24 * 60 * 60 * 1000,
-    description: "Last 7 days",
+    description: "7 days",
   },
   monthly: {
     label: "Monthly",
     durationMs: 31 * 24 * 60 * 60 * 1000,
-    description: "Last 31 days",
+    description: "31 days",
   },
 };
 
@@ -292,9 +292,9 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
     <Card className="py-4 sm:py-0">
       <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
-          <CardTitle>Exchange Rates History</CardTitle>
+          <CardTitle>Historical Exchange Rates</CardTitle>
           <CardDescription>
-            Showing exchange rates for the selected timeframe.
+            Working hard to track exchange rates
           </CardDescription>
         </div>
         <div className="flex">

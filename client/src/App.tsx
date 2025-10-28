@@ -103,10 +103,7 @@ function App() {
   }, [rates]);
 
   const latestRates = useMemo(() => {
-    const byPlatform = new Map<
-      string,
-      { rate: Rate; timestamp: number }
-    >();
+    const byPlatform = new Map<string, { rate: Rate; timestamp: number }>();
 
     rates.forEach((rate) => {
       if (!rate.platform) {
@@ -147,16 +144,16 @@ function App() {
           </a>
           <NavigationMenu viewport={false}>
             <NavigationMenuList>
-              <NavigationMenuItem>
+              {/* <NavigationMenuItem>
                 <NavigationMenuLink
                   href="#rates"
                   className={navigationMenuTriggerStyle()}
                 >
                   Rates
                 </NavigationMenuLink>
-              </NavigationMenuItem>
+              </NavigationMenuItem> */}
               <NavigationMenuItem>
-              <NavigationMenuLink
+                <NavigationMenuLink
                   href="https://sgd-myr-exchange-rates.vercel.app/api/v1/rates"
                   target="_blank"
                   rel="noreferrer"
@@ -252,6 +249,23 @@ function App() {
           </section>
         </div>
       </main>
+      <footer>
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-2 px-6 py-4 text-center text-sm text-muted-foreground sm:flex-row sm:text-left">
+          <p className="tracking-tight">
+            Built to help compare SGD to MYR remittance rates in one place.
+          </p>
+          <p>
+            <a
+              href="https://github.com/likweitan"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline underline-offset-4 transition hover:text-primary/80"
+            >
+              likweitan
+            </a>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

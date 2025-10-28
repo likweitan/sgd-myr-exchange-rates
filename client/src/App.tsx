@@ -101,7 +101,7 @@ function App() {
             href="#rates"
             className="text-lg font-semibold tracking-tight transition"
           >
-            SGD → MYR Exchange Rates
+            SGD → MYR
           </a>
           <NavigationMenu viewport={false}>
             <NavigationMenuList>

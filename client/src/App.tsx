@@ -154,6 +154,16 @@ function App() {
               </NavigationMenuItem> */}
               <NavigationMenuItem>
                 <NavigationMenuLink
+                  href="https://github.com/likweitan/sgd-myr-exchange-rates"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={navigationMenuTriggerStyle()}
+                >
+                  Github
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink
                   href="https://sgd-myr-exchange-rates.vercel.app/api/v1/rates"
                   target="_blank"
                   rel="noreferrer"

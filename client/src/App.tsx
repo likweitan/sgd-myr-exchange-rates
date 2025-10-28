@@ -16,6 +16,8 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 type Rate = {
   id: number;
@@ -92,6 +94,11 @@ function App() {
       timeStyle: "short",
     });
   }, [rates]);
+
+  const sortedRates = useMemo(
+    () => [...rates].sort((a, b) => a.platform.localeCompare(b.platform)),
+    [rates]
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -173,19 +180,17 @@ function App() {
             )}
 
             {!loading && !error && rates.length === 0 && (
-              <Card className="mx-auto max-w-md border-slate-800/60">
-                <CardHeader>
-                  <CardTitle className="text-2xl">No rates yet</CardTitle>
-                  <CardDescription>
-                    Check back later for the latest exchange data.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+              <div className="flex flex-col items-center gap-4">
+                <Button disabled size="sm">
+                  <Spinner />
+                  Loading...
+                </Button>
+              </div>
             )}
 
-            {!loading && !error && rates.length > 0 && (
+            {!loading && !error && sortedRates.length > 0 && (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {rates.map((rate) => (
+                {sortedRates.map((rate) => (
                   <Card key={rate.id} className="hover:shadow-xl gap-1">
                     <CardHeader>
                       <CardTitle>{rate.platform}</CardTitle>

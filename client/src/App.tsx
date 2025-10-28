@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import viteLogo from "/vite.svg";
 
 type Rate = {
   id: number;
@@ -140,7 +141,11 @@ function App() {
             href="#rates"
             className="text-lg font-semibold tracking-tight transition"
           >
-            SGD → MYR
+            <img
+              src={viteLogo}
+              alt="SGD to MYR"
+              className="h-7 w-auto"
+            />
           </a>
           <NavigationMenu viewport={false}>
             <NavigationMenuList>

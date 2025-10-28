@@ -95,7 +95,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 border-b border-slate-800/60 backdrop-blur">
+      <header className="sticky top-0 z-30 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
           <a
             href="#rates"
@@ -128,17 +128,15 @@ function App() {
         </div>
       </header>
       <main className="flex flex-1">
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-6 py-12">
-          <section id="rates" className="w-full space-y-10 text-center">
-            <div className="space-y-4">
-              <Badge variant="outline" className="mx-auto w-fit">
-                SGD → MYR
-              </Badge>
-              <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                Latest Exchange Rates
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-6 py-2">
+          <section id="rates" className="w-full space-y-6 text-center">
+            <div className="space-y-2">
+              <Badge variant="outline">SGD → MYR</Badge>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-3xl">
+                Exchange Rates
               </h1>
               <p className="text-base text-slate-400 sm:text-lg">
-                Real-time rates across popular remittance platforms.
+                Rates across popular remittance platforms.
               </p>
               {lastUpdated && (
                 <p className="text-sm text-slate-500">Updated {lastUpdated}</p>
@@ -188,20 +186,15 @@ function App() {
             {!loading && !error && rates.length > 0 && (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {rates.map((rate) => (
-                  <Card
-                    key={rate.id}
-                    className="border-slate-800/70 transition-all hover:border-slate-200/30 hover:shadow-2xl"
-                  >
-                    <CardHeader className="space-y-2 pb-0 text-left">
-                      <CardTitle className="text-xs font-medium tracking-[0.35em] text-slate-400">
-                        {rate.platform}
-                      </CardTitle>
-                      <CardDescription className="text-slate-500">
+                  <Card key={rate.id} className="hover:shadow-xl gap-1">
+                    <CardHeader>
+                      <CardTitle>{rate.platform}</CardTitle>
+                      {/* <CardDescription className="text-slate-500">
                         {rate.base_currency} to {rate.target_currency}
-                      </CardDescription>
+                      </CardDescription> */}
                     </CardHeader>
-                    <CardContent className="space-y-4 pt-6 text-left">
-                      <p className="text-5xl font-semibold tracking-tight sm:text-6xl">
+                    <CardContent className="space-y-1 text-left">
+                      <p className="text-3xl font-semibold tracking-tight sm:text-3xl">
                         {rate.exchange_rate.toFixed(4)}
                       </p>
                       <p className="text-sm text-slate-400">

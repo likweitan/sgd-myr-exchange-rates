@@ -161,24 +161,31 @@ const buildChartData = (data: HistoricalRate[], platforms: PlatformMeta[]) => {
 
 type TimeRange = "daily" | "weekly" | "monthly";
 
-const RANGE_DEFINITIONS: Record<
-  TimeRange,
-  { label: string; durationMs: number; description: string }
-> = {
+type RangeDefinition = {
+  label: string;
+  description: string;
+  bucketSizeMs: number;
+  bucketCount: number;
+};
+
+const RANGE_DEFINITIONS: Record<TimeRange, RangeDefinition> = {
   daily: {
     label: "Daily",
-    durationMs: 24 * 60 * 60 * 1000,
     description: "24 hours",
+    bucketSizeMs: 60 * 60 * 1000,
+    bucketCount: 24,
   },
   weekly: {
     label: "Weekly",
-    durationMs: 7 * 24 * 60 * 60 * 1000,
     description: "7 days",
+    bucketSizeMs: 24 * 60 * 60 * 1000,
+    bucketCount: 7,
   },
   monthly: {
     label: "Monthly",
-    durationMs: 31 * 24 * 60 * 60 * 1000,
     description: "31 days",
+    bucketSizeMs: 24 * 60 * 60 * 1000,
+    bucketCount: 31,
   },
 };
 
@@ -208,36 +215,120 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
 
   const [activeRange, setActiveRange] = React.useState<TimeRange>("daily");
 
+  const xAxisTickFormatter = React.useMemo(() => {
+    const range = RANGE_DEFINITIONS[activeRange];
+
+    if (!range) {
+      return (value: string) =>
+        formatInDisplayTimeZone(value, {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+    }
+
+    const usesDailyBuckets = range.bucketSizeMs >= 24 * 60 * 60 * 1000;
+
+    if (usesDailyBuckets) {
+      return (value: string) =>
+        formatInDisplayTimeZone(value, {
+          month: "short",
+          day: "numeric",
+        });
+    }
+
+    return (value: string) =>
+      formatInDisplayTimeZone(value, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+  }, [activeRange]);
+
   const filteredChartData = React.useMemo(() => {
     if (chartData.length === 0) {
       return [];
     }
-
-    const latestValidEntry = [...chartData].reverse().find((entry) => {
-      const timestamp = new Date(entry.date as string).getTime();
-      return !Number.isNaN(timestamp);
-    });
-
-    if (!latestValidEntry) {
-      return [];
-    }
-
-    const latestTimestamp = new Date(latestValidEntry.date as string).getTime();
 
     const range = RANGE_DEFINITIONS[activeRange];
     if (!range) {
       return chartData;
     }
 
-    return chartData.filter((entry) => {
-      const entryTimestamp = new Date(entry.date as string).getTime();
-      if (Number.isNaN(entryTimestamp)) {
-        return false;
+    let latestTimestamp: number | null = null;
+    for (let index = chartData.length - 1; index >= 0; index -= 1) {
+      const rawDate = chartData[index]?.date as string | undefined;
+      const timestamp = rawDate ? new Date(rawDate).getTime() : Number.NaN;
+      if (!Number.isNaN(timestamp)) {
+        latestTimestamp = timestamp;
+        break;
+      }
+    }
+
+    if (latestTimestamp === null) {
+      return [];
+    }
+
+    const { bucketSizeMs, bucketCount } = range;
+    if (!bucketSizeMs || !bucketCount) {
+      return chartData;
+    }
+
+    const alignedEnd =
+      Math.floor(latestTimestamp / bucketSizeMs) * bucketSizeMs + bucketSizeMs;
+    const earliestStart = alignedEnd - bucketSizeMs * bucketCount;
+
+    const buckets = Array.from({ length: bucketCount }, (_, index) => {
+      const start = earliestStart + index * bucketSizeMs;
+      return {
+        start,
+        end: start + bucketSizeMs,
+        values: {} as Record<string, number>,
+      };
+    });
+
+    chartData.forEach((entry) => {
+      const rawDate = entry.date as string | undefined;
+      const entryTimestamp = rawDate ? new Date(rawDate).getTime() : Number.NaN;
+      if (
+        Number.isNaN(entryTimestamp) ||
+        entryTimestamp < earliestStart ||
+        entryTimestamp >= alignedEnd
+      ) {
+        return;
       }
 
-      return latestTimestamp - entryTimestamp <= range.durationMs;
+      const bucketIndex = Math.floor(
+        (entryTimestamp - earliestStart) / bucketSizeMs
+      );
+      const bucket = buckets[bucketIndex];
+      if (!bucket) {
+        return;
+      }
+
+      platforms.forEach(({ key }) => {
+        const value = entry[key as keyof typeof entry];
+        if (typeof value === "number" && Number.isFinite(value)) {
+          bucket.values[key] = value;
+        }
+      });
     });
-  }, [activeRange, chartData]);
+
+    return buckets.map(({ start, values }) => {
+      const bucketEntry: Record<string, number | string | null> = {
+        date: new Date(start).toISOString(),
+      };
+
+      platforms.forEach(({ key }) => {
+        bucketEntry[key] =
+          typeof values[key] === "number" ? values[key] : null;
+      });
+
+      return bucketEntry;
+    });
+  }, [activeRange, chartData, platforms]);
 
   const yDomain = React.useMemo<[number | "auto", number | "auto"]>(() => {
     let min = Number.POSITIVE_INFINITY;
@@ -341,15 +432,7 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
-                tickFormatter={(value: string) => {
-                  return formatInDisplayTimeZone(value, {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  });
-                }}
+                tickFormatter={xAxisTickFormatter}
               />
               <YAxis
                 tickLine={false}
@@ -369,7 +452,7 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
                         year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
-                        hour12: true,
+                        hour12: false,
                       });
                     }}
                   />

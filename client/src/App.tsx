@@ -99,6 +99,7 @@ function App() {
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: "medium",
       timeStyle: "short",
+      hour12: false,
       timeZone: DISPLAY_TIME_ZONE,
     }).format(latest);
   }, [rates]);

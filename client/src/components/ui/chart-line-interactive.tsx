@@ -24,6 +24,8 @@ type HistoricalRate = {
   exchange_rate: number;
   retrieved_at?: string;
   created_at?: string;
+  created?: string;
+  updated?: string;
 };
 
 type ChartLineInteractiveProps = {
@@ -136,7 +138,7 @@ const buildChartData = (data: HistoricalRate[], platforms: PlatformMeta[]) => {
   const platformKeys = new Set(platforms.map((platform) => platform.key));
 
   for (const rate of data) {
-    const iso = sanitizeTimestamp(rate.created_at || rate.retrieved_at);
+    const iso = sanitizeTimestamp(rate.created_at || rate.retrieved_at || rate.created || rate.updated);
     if (!iso) {
       continue;
     }

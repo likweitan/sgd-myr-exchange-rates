@@ -22,13 +22,15 @@ import { Spinner } from "@/components/ui/spinner";
 import viteLogo from "/vite.svg";
 
 type Rate = {
-  id: number;
+  id: string | number;
   platform: string;
   base_currency: string;
   target_currency: string;
   exchange_rate: number;
   created_at?: string;
   retrieved_at?: string;
+  created?: string;
+  updated?: string;
 };
 
 type RatesResponse = {
@@ -80,7 +82,7 @@ function App() {
 
   const lastUpdated = useMemo(() => {
     const timestamps = rates
-      .map((rate) => rate.created_at ?? rate.retrieved_at)
+      .map((rate) => rate.created_at ?? rate.retrieved_at ?? rate.created ?? rate.updated)
       .filter((value): value is string => Boolean(value))
       .map((value) => new Date(value));
 
@@ -112,7 +114,7 @@ function App() {
         return;
       }
 
-      const rawTimestamp = rate.created_at ?? rate.retrieved_at;
+      const rawTimestamp = rate.created_at ?? rate.retrieved_at ?? rate.created ?? rate.updated;
       if (!rawTimestamp) {
         return;
       }

@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { SupabaseConfigurationError, supabaseConfigured } = require('../utils/config');
+const { PocketBaseConfigurationError, pocketbaseConfigured } = require('../utils/config');
 const { getLatestRates, getRates } = require('../utils/ratesService');
 
 const router = express.Router();
@@ -25,7 +25,7 @@ router.get(
       const data = await getRates(limit);
       return res.json({ data, count: data.length });
     } catch (error) {
-      if (error instanceof SupabaseConfigurationError) {
+      if (error instanceof PocketBaseConfigurationError) {
         return res.status(503).json({ error: error.message });
       }
       throw error;
@@ -40,7 +40,7 @@ router.get(
       const data = await getLatestRates();
       return res.json({ data, count: data.length });
     } catch (error) {
-      if (error instanceof SupabaseConfigurationError) {
+      if (error instanceof PocketBaseConfigurationError) {
         return res.status(503).json({ error: error.message });
       }
       throw error;
@@ -53,7 +53,7 @@ router.get(
   asyncHandler(async (req, res) => {
     res.json({
       status: 'ok',
-      supabase_configured: supabaseConfigured(),
+      pocketbase_configured: pocketbaseConfigured(),
     });
   }),
 );

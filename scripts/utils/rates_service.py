@@ -6,7 +6,7 @@ from collections import OrderedDict
 from typing import Any
 
 from .config import BASE_CURRENCY, TARGET_CURRENCY
-from . import supabase_client
+from . import pocketbase_client
 
 
 def insert_rates(rates: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -22,12 +22,12 @@ def insert_rates(rates: list[dict[str, Any]]) -> list[dict[str, Any]]:
         }
         for rate in rates
     ]
-    return supabase_client.insert_rows(enriched)
+    return pocketbase_client.insert_rows(enriched)
 
 
 def get_rates(limit: int | None = None) -> list[dict[str, Any]]:
     """Return exchange rates ordered newest first."""
-    return supabase_client.fetch_rows(limit=limit)
+    return pocketbase_client.fetch_rows(limit=limit)
 
 
 def get_latest_rates() -> list[dict[str, Any]]:

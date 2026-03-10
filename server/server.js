@@ -5,7 +5,7 @@ const express = require('express');
 const corsMiddleware = require('./middleware/cors');
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
-const { PORT, SupabaseConfigurationError } = require('./utils/config');
+const { PORT, PocketBaseConfigurationError } = require('./utils/config');
 
 const app = express();
 
@@ -46,7 +46,7 @@ app.use((req, res) => {
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  if (err instanceof SupabaseConfigurationError) {
+  if (err instanceof PocketBaseConfigurationError) {
     return res.status(503).json({ error: err.message });
   }
 

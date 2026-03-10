@@ -1,5 +1,5 @@
 const { BASE_CURRENCY, TARGET_CURRENCY } = require('./config');
-const { fetchRows, insertRows } = require('./supabaseClient');
+const { fetchRows, insertRows } = require('./pocketbaseClient');
 
 const insertRates = async (rates) => {
   if (!rates?.length) {

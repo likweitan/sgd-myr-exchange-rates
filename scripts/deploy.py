@@ -6,10 +6,10 @@ import argparse
 from typing import List
 
 from .utils import (
-    SupabaseConfigurationError,
+    PocketBaseConfigurationError,
     collect_rates,
     insert_rates,
-    supabase_configured,
+    pocketbase_configured,
 )
 
 
@@ -25,19 +25,19 @@ def _scrape_and_insert(dry_run: bool = False) -> int:
             print(rate)
         return 0
 
-    if not supabase_configured():
-        print("Supabase credentials not configured; cannot insert rates.")
+    if not pocketbase_configured():
+        print("PocketBase URL not configured; cannot insert rates.")
         return 1
 
     try:
         response = insert_rates(rates)
-        print("Inserted into Supabase:", response)
+        print("Inserted into PocketBase:", response)
         return 0
-    except SupabaseConfigurationError as exc:
-        print(f"Supabase configuration error: {exc}")
+    except PocketBaseConfigurationError as exc:
+        print(f"PocketBase configuration error: {exc}")
         return 1
     except Exception as exc:  # pragma: no cover - defensive logging path
-        print(f"Failed to insert into Supabase: {exc}")
+        print(f"Failed to insert into PocketBase: {exc}")
         return 1
 
 
@@ -46,7 +46,7 @@ def main(argv: List[str] | None = None) -> int:
     parser.add_argument(
         "--scrape",
         action="store_true",
-        help="Collect exchange rates and push to Supabase.",
+        help="Collect exchange rates and push to PocketBase.",
     )
     parser.add_argument(
         "--dry-run",

@@ -22,7 +22,7 @@ def load_dotenv_if_needed() -> None:
     load_dotenv()
 
     # If required values are still missing, look for repository root .env.
-    if not os.getenv("SUPABASE_URL"):
+    if not os.getenv("POCKETBASE_URL"):
         root_env = resolve_path(".env")
         if root_env.exists():
             load_dotenv(dotenv_path=root_env)
@@ -35,30 +35,29 @@ def _get_env(key: str, default: str | None = None) -> str | None:
     return os.getenv(key, default)
 
 
-SUPABASE_URL: str | None = _get_env("SUPABASE_URL")
-SUPABASE_KEY: str | None = _get_env("SUPABASE_KEY")
-SUPABASE_TABLE: str = _get_env("SUPABASE_TABLE", "exchange_rates") or "exchange_rates"
+POCKETBASE_URL: str | None = _get_env("POCKETBASE_URL")
+POCKETBASE_ADMIN_EMAIL: str | None = _get_env("POCKETBASE_ADMIN_EMAIL")
+POCKETBASE_ADMIN_PASSWORD: str | None = _get_env("POCKETBASE_ADMIN_PASSWORD")
+POCKETBASE_COLLECTION: str = _get_env("POCKETBASE_COLLECTION", "exchange_rates") or "exchange_rates"
 
 BASE_CURRENCY: str = _get_env("BASE_CURRENCY", "SGD") or "SGD"
 TARGET_CURRENCY: str = _get_env("TARGET_CURRENCY", "MYR") or "MYR"
 
 
-def supabase_configured() -> bool:
-    """Return True if Supabase variables appear to be configured."""
+def pocketbase_configured() -> bool:
+    """Return True if PocketBase URL appears to be configured."""
     return bool(
-        SUPABASE_URL
-        and SUPABASE_KEY
-        and "YOUR_SUPABASE_URL" not in SUPABASE_URL
-        and "YOUR_SUPABASE_KEY" not in SUPABASE_KEY
+        POCKETBASE_URL
+        and "YOUR_POCKETBASE_URL" not in POCKETBASE_URL
     )
 
 
 def get_environment_variables() -> Dict[str, str | None]:
     """Return a mapping of environment variables relevant to automation."""
     return {
-        "SUPABASE_URL": SUPABASE_URL,
-        "SUPABASE_KEY": SUPABASE_KEY,
-        "SUPABASE_TABLE": SUPABASE_TABLE,
+        "POCKETBASE_URL": POCKETBASE_URL,
+        "POCKETBASE_ADMIN_EMAIL": POCKETBASE_ADMIN_EMAIL,
+        "POCKETBASE_COLLECTION": POCKETBASE_COLLECTION,
         "BASE_CURRENCY": BASE_CURRENCY,
         "TARGET_CURRENCY": TARGET_CURRENCY,
     }

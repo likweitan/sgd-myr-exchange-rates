@@ -52,7 +52,7 @@ function App() {
       setError(null);
       try {
         const response = await fetch(
-          "https://sgd-myr-exchange-rates.vercel.app/api/v1/rates",
+          "https://sgd-myr-exchange-rates.vercel.app/api/v1/rates?limit=2000",
           { signal: controller.signal }
         );
 

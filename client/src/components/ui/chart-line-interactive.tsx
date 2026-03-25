@@ -185,9 +185,9 @@ const RANGE_DEFINITIONS: Record<TimeRange, RangeDefinition> = {
   },
   monthly: {
     label: "Monthly",
-    description: "31 days",
+    description: "30 days",
     bucketSizeMs: 24 * 60 * 60 * 1000,
-    bucketCount: 31,
+    bucketCount: 30,
   },
 };
 
@@ -218,34 +218,20 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
   const [activeRange, setActiveRange] = React.useState<TimeRange>("daily");
 
   const xAxisTickFormatter = React.useMemo(() => {
-    const range = RANGE_DEFINITIONS[activeRange];
-
-    if (!range) {
+    if (activeRange === "daily") {
       return (value: string) =>
         formatInDisplayTimeZone(value, {
-          month: "short",
-          day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
         });
     }
 
-    const usesDailyBuckets = range.bucketSizeMs >= 24 * 60 * 60 * 1000;
-
-    if (usesDailyBuckets) {
-      return (value: string) =>
-        formatInDisplayTimeZone(value, {
-          month: "short",
-          day: "numeric",
-        });
-    }
-
+    // weekly & monthly both use day labels
     return (value: string) =>
       formatInDisplayTimeZone(value, {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
+        month: "short",
+        day: "numeric",
       });
   }, [activeRange]);
 
@@ -259,6 +245,7 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
       return chartData;
     }
 
+    // Find the latest timestamp in the data
     let latestTimestamp: number | null = null;
     for (let index = chartData.length - 1; index >= 0; index -= 1) {
       const rawDate = chartData[index]?.date as string | undefined;
@@ -278,19 +265,23 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
       return chartData;
     }
 
+    // Calculate the time window: from (now - range) to now
     const alignedEnd =
       Math.floor(latestTimestamp / bucketSizeMs) * bucketSizeMs + bucketSizeMs;
     const earliestStart = alignedEnd - bucketSizeMs * bucketCount;
 
+    // Create empty buckets and track the latest value per platform per bucket
     const buckets = Array.from({ length: bucketCount }, (_, index) => {
       const start = earliestStart + index * bucketSizeMs;
       return {
         start,
         end: start + bucketSizeMs,
         values: {} as Record<string, number>,
+        timestamps: {} as Record<string, number>,
       };
     });
 
+    // Fill buckets - keep the latest value per platform within each bucket
     chartData.forEach((entry) => {
       const rawDate = entry.date as string | undefined;
       const entryTimestamp = rawDate ? new Date(rawDate).getTime() : Number.NaN;
@@ -313,19 +304,31 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
       platforms.forEach(({ key }) => {
         const value = entry[key as keyof typeof entry];
         if (typeof value === "number" && Number.isFinite(value)) {
-          bucket.values[key] = value;
+          const existingTs = bucket.timestamps[key] ?? -Infinity;
+          if (entryTimestamp >= existingTs) {
+            bucket.values[key] = value;
+            bucket.timestamps[key] = entryTimestamp;
+          }
         }
       });
     });
 
+    // Forward-fill: carry the last known value into empty buckets
+    const lastKnown: Record<string, number> = {};
     return buckets.map(({ start, values }) => {
       const bucketEntry: Record<string, number | string | null> = {
         date: new Date(start).toISOString(),
       };
 
       platforms.forEach(({ key }) => {
-        bucketEntry[key] =
-          typeof values[key] === "number" ? values[key] : null;
+        if (typeof values[key] === "number") {
+          lastKnown[key] = values[key];
+          bucketEntry[key] = values[key];
+        } else {
+          // Forward-fill with last known value so the line doesn't break
+          bucketEntry[key] =
+            typeof lastKnown[key] === "number" ? lastKnown[key] : null;
+        }
       });
 
       return bucketEntry;
@@ -448,13 +451,20 @@ export function ChartLineInteractive({ data }: ChartLineInteractiveProps) {
                   <ChartTooltipContent
                     className="w-[240px]"
                     labelFormatter={(value) => {
+                      if (activeRange === "daily") {
+                        return formatInDisplayTimeZone(value as string, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        });
+                      }
                       return formatInDisplayTimeZone(value as string, {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
                       });
                     }}
                   />

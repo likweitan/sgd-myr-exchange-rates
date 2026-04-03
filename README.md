@@ -1,4 +1,4 @@
-# SGD-MYR Exchange Rates Platform
+# Ringgit
 
 Express-powered API plus Python Playwright scraper that tracks SGD to MYR exchange rates from CIMB Clicks, Wise, and Western Union, sending each snapshot straight to PocketBase.
 

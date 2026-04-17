@@ -38,31 +38,37 @@ type RatesResponse = {
 };
 
 const DISPLAY_TIME_ZONE = "Asia/Singapore";
+const API_BASE_URL = "https://sgd-myr-exchange-rates.vercel.app/api/v1";
+const CHART_HISTORY_TOP = 240;
 
 function App() {
-  const [rates, setRates] = useState<Rate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [latestRates, setLatestRates] = useState<Rate[]>([]);
+  const [chartRates, setChartRates] = useState<Rate[]>([]);
+  const [latestLoading, setLatestLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    async function fetchRates() {
-      setLoading(true);
+    async function fetchLatestRates() {
+      setLatestLoading(true);
       setError(null);
+
       try {
-        const response = await fetch(
-          "https://sgd-myr-exchange-rates.vercel.app/api/v1/rates?limit=2000",
-          { signal: controller.signal }
-        );
+        const response = await fetch(`${API_BASE_URL}/rates/latest`, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }
 
         const payload: RatesResponse = await response.json();
-
-        setRates(Array.isArray(payload.data) ? payload.data : []);
+        const nextRates = Array.isArray(payload.data) ? payload.data : [];
+        setLatestRates(
+          nextRates.sort((a, b) => a.platform.localeCompare(b.platform))
+        );
       } catch (err) {
         if ((err as Error).name === "AbortError") {
           return;
@@ -71,17 +77,52 @@ function App() {
         console.error("Failed to fetch exchange rates", err);
         setError("Unable to load exchange rates right now.");
       } finally {
-        setLoading(false);
+        setLatestLoading(false);
       }
     }
 
-    fetchRates();
+    async function fetchChartRates() {
+      setChartLoading(true);
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/rates?$top=${CHART_HISTORY_TOP}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const payload: RatesResponse = await response.json();
+        setChartRates(Array.isArray(payload.data) ? payload.data : []);
+      } catch (err) {
+        if ((err as Error).name === "AbortError") {
+          return;
+        }
+
+        console.error("Failed to fetch chart data", err);
+        setChartRates([]);
+      } finally {
+        setChartLoading(false);
+      }
+    }
+
+    async function loadData() {
+      await fetchLatestRates();
+
+      if (!controller.signal.aborted) {
+        await fetchChartRates();
+      }
+    }
+
+    loadData();
 
     return () => controller.abort();
   }, []);
 
   const lastUpdated = useMemo(() => {
-    const timestamps = rates
+    const timestamps = latestRates
       .map((rate) => rate.created_at ?? rate.retrieved_at ?? rate.created ?? rate.updated)
       .filter((value): value is string => Boolean(value))
       .map((value) => new Date(value));
@@ -104,37 +145,7 @@ function App() {
       hour12: false,
       timeZone: DISPLAY_TIME_ZONE,
     }).format(latest);
-  }, [rates]);
-
-  const latestRates = useMemo(() => {
-    const byPlatform = new Map<string, { rate: Rate; timestamp: number }>();
-
-    rates.forEach((rate) => {
-      if (!rate.platform) {
-        return;
-      }
-
-      const rawTimestamp = rate.created_at ?? rate.retrieved_at ?? rate.created ?? rate.updated;
-      if (!rawTimestamp) {
-        return;
-      }
-
-      const parsed = new Date(rawTimestamp);
-      const timestamp = parsed.getTime();
-      if (Number.isNaN(timestamp)) {
-        return;
-      }
-
-      const existing = byPlatform.get(rate.platform);
-      if (!existing || timestamp > existing.timestamp) {
-        byPlatform.set(rate.platform, { rate, timestamp });
-      }
-    });
-
-    return Array.from(byPlatform.values())
-      .map((entry) => entry.rate)
-      .sort((a, b) => a.platform.localeCompare(b.platform));
-  }, [rates]);
+  }, [latestRates]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -200,7 +211,7 @@ function App() {
               )}
             </div>
 
-            {loading && (
+            {latestLoading && (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <Card key={index} className="" aria-hidden>
@@ -216,7 +227,7 @@ function App() {
               </div>
             )}
 
-            {error && !loading && (
+            {error && !latestLoading && (
               <Card className="mx-auto max-w-md border-red-500/50 bg-red-500/10 text-red-100">
                 <CardHeader>
                   <CardTitle className="text-2xl">
@@ -229,7 +240,7 @@ function App() {
               </Card>
             )}
 
-            {!loading && !error && latestRates.length === 0 && (
+            {!latestLoading && !error && latestRates.length === 0 && (
               <div className="flex flex-col items-center gap-4">
                 <Button disabled size="sm">
                   <Spinner />
@@ -238,7 +249,7 @@ function App() {
               </div>
             )}
 
-            {!loading && !error && latestRates.length > 0 && (
+            {!latestLoading && !error && latestRates.length > 0 && (
               <div className="space-y-6">
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {latestRates.map((rate) => (
@@ -261,7 +272,22 @@ function App() {
                     </Card>
                   ))}
                 </div>
-                <ChartLineInteractive data={rates} />
+                {chartLoading ? (
+                  <Card className="py-4 sm:py-0">
+                    <CardHeader className="border-b">
+                      <CardTitle>Historical Exchange Rates</CardTitle>
+                      <CardDescription>
+                        Loading the latest chart data.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 px-6 py-8">
+                      <Skeleton className="h-6 w-40" />
+                      <Skeleton className="h-[250px] w-full" />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <ChartLineInteractive data={chartRates} />
+                )}
               </div>
             )}
           </section>

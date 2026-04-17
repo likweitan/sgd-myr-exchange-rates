@@ -43,7 +43,7 @@ npm start                # runs the server with Node
 ```
 
 Key endpoints (served from `server/`):
-- `GET /api/v1/rates` - most recent rows (optional `?limit=10`).
+- `GET /api/v1/rates` - most recent rows (optional `?limit=10` or `?$top=10`).
 - `GET /api/v1/rates/latest` - the freshest rate per platform.
 - `GET /api/v1/health` - simple health status plus PocketBase configuration flag.
 - `GET /auth/verify` - requires `API_BEARER_TOKEN`; responds with `{ authenticated: true }` on success.

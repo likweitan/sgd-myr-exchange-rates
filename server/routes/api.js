@@ -11,13 +11,16 @@ const asyncHandler = (handler) => (req, res, next) =>
 router.get(
   '/rates',
   asyncHandler(async (req, res) => {
-    const limitParam = req.query.limit;
+    const topParam = req.query.$top;
+    const limitParam = topParam ?? req.query.limit;
     let limit;
 
     if (limitParam !== undefined) {
       limit = Number.parseInt(limitParam, 10);
       if (Number.isNaN(limit) || limit <= 0) {
-        return res.status(400).json({ error: 'Query parameter "limit" must be a positive integer.' });
+        return res.status(400).json({
+          error: 'Query parameter "$top" or "limit" must be a positive integer.',
+        });
       }
     }
 
